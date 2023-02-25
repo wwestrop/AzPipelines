@@ -1,0 +1,25 @@
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- pwsh: |
+    dotnet tool install --global dotnet-outdated-tool
+
+    dotnet outdated -u --output updates.json --output-format json
+    
+    . .azuredevops/summariseUpdates.ps1
+    . .azuredevops/createWorkItem.ps1
+
+    $summary = Summarise
+    if ($summary -eq "") {
+        Write-Host "Nothing to update"
+    }
+    else {
+        CreateWorkItem "<ORGANISATION>" "<PROJECT>" $env:BUILD_REPOSITORY_NAME "<WORK-ITEM-TYPE>" $summary
+    }
+  displayName: 'Check for package updates'
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
